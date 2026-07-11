@@ -3,29 +3,33 @@ from ultralytics import YOLO
 
 class ShelfDetector:
     """
-    RetailShelfAI Detection Engine
-    Loads a YOLO model and performs object detection on shelf images.
+    Retail Shelf AI Detector
     """
 
-    def __init__(self, model_path="weights/best.pt", confidence=0.25):
-        self.model = YOLO(model_path)
-        self.confidence = confidence
+    def __init__(self, weights_path):
+        self.model = YOLO(weights_path)
 
-    def detect(self, image_path):
-        """
-        Run object detection on an image.
-
-        Args:
-            image_path (str): Path to image.
-
-        Returns:
-            Ultralytics Results object.
-        """
+    def detect(self, image_path, confidence=0.40):
 
         results = self.model.predict(
             source=image_path,
-            conf=self.confidence,
+            conf=confidence,
             verbose=False
         )
 
-        return results
+        detections = []
+
+        for box in results[0].boxes:
+
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+
+            detections.append({
+                "bbox": [x1, y1, x2, y2],
+                "confidence": float(box.conf[0]),
+                "class_id": int(box.cls[0])
+            })
+
+        return {
+            "total_products": len(detections),
+            "detections": detections
+        }
